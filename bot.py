@@ -3110,10 +3110,30 @@ async def start_allowance_check(user_id, network_choice, message=None):
         
 # ========== ЗАПУСК БОТА ==========
 
-async def main():
+from aiohttp import web
+
+# Простой HTTP сервер для Render
+async def handle_health_check(request):
+    return web.Response(text="Bot is running")
+
+async def start_http_server():
+    app = web.Application()
+    app.router.add_get('/health', handle_health_check)
+    app.router.add_get('/', handle_health_check)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 8080)
+    await site.start()
+    print("✅ HTTP сервер запущен на порту 8080")
+
+# Основная функция с HTTP сервером
+async def main_with_http():
+    # Запускаем HTTP сервер
+    await start_http_server()
+    # Запускаем бота
     logger.info("🚀 Запуск бота-анализатора контрактов...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     print("🚀 Бот запускается на Render...")
-    asyncio.run(main())
+    asyncio.run(main_with_http())
