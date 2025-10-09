@@ -1423,7 +1423,6 @@ async def test_allowance_command(message: types.Message):
 
 @dp.message(lambda message: message.text == "🔍 Анализ контракта")
 async def start_analysis(message: types.Message, state: FSMContext):
-    await state.clear()
     if message.from_user.id not in ALLOWED_USERS:
         await message.answer("❌ Доступ запрещен")
         return
@@ -1590,7 +1589,6 @@ async def handle_network_selection(callback: types.CallbackQuery, state: FSMCont
 
 @dp.message(lambda message: message.text == "🛠️ Диагностика")
 async def diagnostics_command(message: types.Message):
-    await state.clear()
     if message.from_user.id not in ALLOWED_USERS:
         await message.answer("❌ Доступ запрещен")
         return
@@ -1619,7 +1617,6 @@ async def diagnostics_command(message: types.Message):
 
 @dp.message(lambda message: message.text == "💰 Проверка allowance")
 async def start_allowance_scan(message: types.Message, state: FSMContext):
-    await state.clear()
     if message.from_user.id not in ALLOWED_USERS:
         await message.answer("❌ Доступ запрещен")
         return
