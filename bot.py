@@ -3110,30 +3110,66 @@ async def start_allowance_check(user_id, network_choice, message=None):
         
 # ========== ЗАПУСК БОТА ==========
 
-from aiohttp import web
-
-# Простой HTTP сервер для Render
-async def handle_health_check(request):
-    return web.Response(text="Bot is running")
-
-async def start_http_server():
-    app = web.Application()
-    app.router.add_get('/health', handle_health_check)
-    app.router.add_get('/', handle_health_check)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', 8080)
-    await site.start()
-    print("✅ HTTP сервер запущен на порту 8080")
-
-# Основная функция с HTTP сервером
-async def main_with_http():
-    # Запускаем HTTP сервер
-    await start_http_server()
-    # Запускаем бота
+async def main():
     logger.info("🚀 Запуск бота-анализатора контрактов...")
     await dp.start_polling(bot)
 
+from aiohttp import web
+import os
+
+# Webhook обработчики
+async def handle_webhook(request):
+    """Обработчик webhook от Telegram"""
+    try:
+        update_data = await request.json()
+        update = types.Update(**update_data)
+        await dp.feed_update(bot, update)
+        return web.Response(text="OK")
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return web.Response(status=500, text="Error")
+
+async def handle_health_check(request):
+    """Health check для Render"""
+    return web.Response(text="Bot is running")
+
+async def start_webhook_app():
+    """Запуск webhook приложения"""
+    app = web.Application()
+    
+    # Регистрируем обработчики
+    app.router.add_post('/webhook', handle_webhook)
+    app.router.add_get('/health', handle_health_check)
+    app.router.add_get('/', handle_health_check)
+    
+    return app
+
+async def main_webhook():
+    """Основная функция с webhook"""
+    # Устанавливаем webhook
+    webhook_url = f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME', 'your-app-name.onrender.com')}/webhook"
+    
+    await bot.delete_webhook(drop_pending_updates=True)
+    await bot.set_webhook(webhook_url)
+    
+    logger.info(f"✅ Webhook установлен: {webhook_url}")
+    
+    # Запускаем HTTP сервер
+    app = await start_webhook_app()
+    runner = web.AppRunner(app)
+    await runner.setup()
+    
+    port = int(os.getenv('PORT', 8080))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    
+    logger.info(f"✅ HTTP сервер запущен на порту {port}")
+    logger.info("🤖 Бот готов к работе через webhook!")
+    
+    # Бесконечный цикл чтобы сервер не останавливался
+    while True:
+        await asyncio.sleep(3600)  # Спим 1 час
+
 if __name__ == "__main__":
-    print("🚀 Бот запускается на Render...")
-    asyncio.run(main_with_http())
+    print("🚀 Бот запускается на Render с webhook...")
+    asyncio.run(main_webhook())
