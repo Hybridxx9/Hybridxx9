@@ -1440,7 +1440,8 @@ async def handle_contract_address(message: types.Message, state: FSMContext):
     contract_address = message.text.strip()
     
     if not (contract_address.startswith('0x') and len(contract_address) == 42):
-        await message.answer("❌ Неверный формат адреса контракта. Попробуйте снова:")
+        await message.answer("❌ Неверный формат адреса контракта. Попробуйте снова:\n\n"
+                             "Перезапустите бота и повторите")
         return
     
     await state.update_data(contract_address=contract_address)
