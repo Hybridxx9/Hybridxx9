@@ -3110,12 +3110,26 @@ async def start_allowance_check(user_id, network_choice, message=None):
         
 # ========== ЗАПУСК БОТА ==========
 
-async def main():
-    logger.info("🚀 Запуск бота-анализатора контрактов...")
-    await dp.start_polling(bot)
-
 from aiohttp import web
 import os
+
+def start_keep_alive():
+    """Простой keep-alive через aiohttp"""
+    async def ping_server():
+        while True:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    url = f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME', 'scanwallet.onrender.com')}/health"
+                    async with session.get(url, timeout=10) as response:
+                        logger.info(f"🫀 Keep-alive ping: {response.status}")
+            except Exception as e:
+                logger.error(f"❌ Keep-alive error: {e}")
+            
+            await asyncio.sleep(600)  # 10 минут
+    
+    # Запускаем в asyncio задачу
+    asyncio.create_task(ping_server())
+    logger.info("✅ Keep-alive запущен")
 
 # Webhook обработчики
 async def handle_webhook(request):
@@ -3146,8 +3160,11 @@ async def start_webhook_app():
 
 async def main_webhook():
     """Основная функция с webhook"""
+    # 🔽🔽🔽 ДОБАВЬ ВЫЗОВ KEEP-ALIVE ЗДЕСЬ 🔽🔽🔽
+    start_keep_alive()
+    
     # Устанавливаем webhook
-    webhook_url = f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME', 'your-app-name.onrender.com')}/webhook"
+    webhook_url = f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME', 'scanwallet.onrender.com')}/webhook"
     
     await bot.delete_webhook(drop_pending_updates=True)
     await bot.set_webhook(webhook_url)
