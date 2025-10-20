@@ -20,7 +20,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 import aiohttp
 import json
 
-# Загрузка переменных окружения
+# Загрузка переменных окруженияя
 load_dotenv()
 
 # Настройка логирования
